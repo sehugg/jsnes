@@ -1,6 +1,7 @@
 ._*
 .DS_Store
 /dist
+/build
 /local-roms
 /node_modules
 /tmp

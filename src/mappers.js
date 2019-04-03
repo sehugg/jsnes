@@ -863,10 +863,10 @@ Mappers[4] = function(nes) {
   this.command = null;
   this.prgAddressSelect = null;
   this.chrAddressSelect = null;
-  this.pageNumber = null;
-  this.irqCounter = null;
-  this.irqLatchValue = null;
-  this.irqEnable = null;
+  this.irqCounter = 0xff;
+  this.irqLatchValue = 0xff;
+  this.irqReload = 0;
+  this.irqEnable = 0;
   this.prgAddressChanged = false;
 };
 
@@ -879,7 +879,7 @@ Mappers[4].prototype.write = function(address, value) {
     return;
   }
 
-  switch (address) {
+  switch (address & 0xe001) {
     case 0x8000:
       // Command/Address Select register
       this.command = value & 7;
@@ -912,19 +912,17 @@ Mappers[4].prototype.write = function(address, value) {
       break;
 
     case 0xc000:
-      // IRQ Counter register
-      this.irqCounter = value;
-      //nes.ppu.mapperIrqCounter = 0;
-      break;
-
-    case 0xc001:
       // IRQ Latch register
       this.irqLatchValue = value;
       break;
 
+    case 0xc001:
+      // IRQ Reload register (TODO: copy at next rising A12)
+      this.irqReload = 1;
+      break;
+
     case 0xe000:
-      // IRQ Control Reg 0 (disable)
-      //irqCounter = irqLatchValue;
+      // IRQ Control Reg 0 (disable, ack)
       this.irqEnable = 0;
       break;
 
@@ -1061,14 +1059,16 @@ Mappers[4].prototype.loadROM = function() {
 };
 
 Mappers[4].prototype.clockIrqCounter = function() {
-  if (this.irqEnable === 1) {
-    this.irqCounter--;
-    if (this.irqCounter < 0) {
-      // Trigger IRQ:
-      //nes.getCpu().doIrq();
+  if (this.irqReload === 1) {
+    this.irqCounter = this.irqLatchValue;
+    this.irqReload = 0;
+  }
+  this.irqCounter--;
+  if (this.irqCounter < 0) {
+    if (this.irqEnable === 1) {
       this.nes.cpu.requestIrq(this.nes.cpu.IRQ_NORMAL);
-      this.irqCounter = this.irqLatchValue;
     }
+    this.irqCounter = this.irqLatchValue;
   }
 };
 
@@ -1077,7 +1077,7 @@ Mappers[4].prototype.toJSON = function() {
   s.command = this.command;
   s.prgAddressSelect = this.prgAddressSelect;
   s.chrAddressSelect = this.chrAddressSelect;
-  s.pageNumber = this.pageNumber;
+  s.irqReload = this.irqReload;
   s.irqCounter = this.irqCounter;
   s.irqLatchValue = this.irqLatchValue;
   s.irqEnable = this.irqEnable;
@@ -1090,7 +1090,7 @@ Mappers[4].prototype.fromJSON = function(s) {
   this.command = s.command;
   this.prgAddressSelect = s.prgAddressSelect;
   this.chrAddressSelect = s.chrAddressSelect;
-  this.pageNumber = s.pageNumber;
+  this.irqReload = s.irqReload;
   this.irqCounter = s.irqCounter;
   this.irqLatchValue = s.irqLatchValue;
   this.irqEnable = s.irqEnable;
