@@ -91,8 +91,8 @@ PPU.prototype = {
     var i;
 
     // Memory
-    this.vramMem = new Array(0x8000);
-    this.spriteMem = new Array(0x100);
+    this.vramMem = new Uint8Array(0x8000);
+    this.spriteMem = new Uint8Array(0x100);
     for (i = 0; i < this.vramMem.length; i++) {
       this.vramMem[i] = 0;
     }
@@ -156,9 +156,9 @@ PPU.prototype = {
 
     // Variables used when rendering:
     this.attrib = new Array(32);
-    this.buffer = new Array(256 * 240);
-    this.bgbuffer = new Array(256 * 240);
-    this.pixrendered = new Array(256 * 240);
+    this.buffer = new Uint32Array(256 * 240);
+    this.bgbuffer = new Uint32Array(256 * 240);
+    this.pixrendered = new Uint32Array(256 * 240);
 
     this.validTileData = null;
 
@@ -182,8 +182,8 @@ PPU.prototype = {
     this.hitSpr0 = false;
 
     // Palette data:
-    this.sprPalette = new Array(16);
-    this.imgPalette = new Array(16);
+    this.sprPalette = new Uint32Array(16);
+    this.imgPalette = new Uint32Array(16);
 
     // Create pattern table tile buffers:
     this.ptTile = new Array(512);
@@ -201,7 +201,7 @@ PPU.prototype = {
     }
 
     // Initialize mirroring lookup table:
-    this.vramMirrorTable = new Array(0x8000);
+    this.vramMirrorTable = new Uint16Array(0x8000);
     for (i = 0; i < 0x8000; i++) {
       this.vramMirrorTable[i] = i;
     }
@@ -225,7 +225,7 @@ PPU.prototype = {
 
     // Remove mirroring:
     if (this.vramMirrorTable === null) {
-      this.vramMirrorTable = new Array(0x8000);
+      this.vramMirrorTable = new Uint16Array(0x8000);
     }
     for (var i = 0; i < 0x8000; i++) {
       this.vramMirrorTable[i] = i;
@@ -1537,8 +1537,8 @@ var NameTable = function(width, height, name) {
   this.height = height;
   this.name = name;
 
-  this.tile = new Array(width * height);
-  this.attrib = new Array(width * height);
+  this.tile = new Uint8Array(width * height);
+  this.attrib = new Uint8Array(width * height);
   for (var i = 0; i < width * height; i++) {
     this.tile[i] = 0;
     this.attrib[i] = 0;
@@ -1590,7 +1590,7 @@ NameTable.prototype = {
 };
 
 var PaletteTable = function() {
-  this.curTable = new Array(64);
+  this.curTable = new Uint32Array(64);
   this.emphTable = new Array(8);
   this.currentEmph = -1;
 };
@@ -1602,14 +1602,14 @@ PaletteTable.prototype = {
 
   loadNTSCPalette: function() {
     // prettier-ignore
-    this.curTable = [0x525252, 0xB40000, 0xA00000, 0xB1003D, 0x740069, 0x00005B, 0x00005F, 0x001840, 0x002F10, 0x084A08, 0x006700, 0x124200, 0x6D2800, 0x000000, 0x000000, 0x000000, 0xC4D5E7, 0xFF4000, 0xDC0E22, 0xFF476B, 0xD7009F, 0x680AD7, 0x0019BC, 0x0054B1, 0x006A5B, 0x008C03, 0x00AB00, 0x2C8800, 0xA47200, 0x000000, 0x000000, 0x000000, 0xF8F8F8, 0xFFAB3C, 0xFF7981, 0xFF5BC5, 0xFF48F2, 0xDF49FF, 0x476DFF, 0x00B4F7, 0x00E0FF, 0x00E375, 0x03F42B, 0x78B82E, 0xE5E218, 0x787878, 0x000000, 0x000000, 0xFFFFFF, 0xFFF2BE, 0xF8B8B8, 0xF8B8D8, 0xFFB6FF, 0xFFC3FF, 0xC7D1FF, 0x9ADAFF, 0x88EDF8, 0x83FFDD, 0xB8F8B8, 0xF5F8AC, 0xFFFFB0, 0xF8D8F8, 0x000000, 0x000000];
+    this.curTable = new Uint32Array([0x525252, 0xB40000, 0xA00000, 0xB1003D, 0x740069, 0x00005B, 0x00005F, 0x001840, 0x002F10, 0x084A08, 0x006700, 0x124200, 0x6D2800, 0x000000, 0x000000, 0x000000, 0xC4D5E7, 0xFF4000, 0xDC0E22, 0xFF476B, 0xD7009F, 0x680AD7, 0x0019BC, 0x0054B1, 0x006A5B, 0x008C03, 0x00AB00, 0x2C8800, 0xA47200, 0x000000, 0x000000, 0x000000, 0xF8F8F8, 0xFFAB3C, 0xFF7981, 0xFF5BC5, 0xFF48F2, 0xDF49FF, 0x476DFF, 0x00B4F7, 0x00E0FF, 0x00E375, 0x03F42B, 0x78B82E, 0xE5E218, 0x787878, 0x000000, 0x000000, 0xFFFFFF, 0xFFF2BE, 0xF8B8B8, 0xF8B8D8, 0xFFB6FF, 0xFFC3FF, 0xC7D1FF, 0x9ADAFF, 0x88EDF8, 0x83FFDD, 0xB8F8B8, 0xF5F8AC, 0xFFFFB0, 0xF8D8F8, 0x000000, 0x000000]);
     this.makeTables();
     this.setEmphasis(0);
   },
 
   loadPALPalette: function() {
     // prettier-ignore
-    this.curTable = [0x525252, 0xB40000, 0xA00000, 0xB1003D, 0x740069, 0x00005B, 0x00005F, 0x001840, 0x002F10, 0x084A08, 0x006700, 0x124200, 0x6D2800, 0x000000, 0x000000, 0x000000, 0xC4D5E7, 0xFF4000, 0xDC0E22, 0xFF476B, 0xD7009F, 0x680AD7, 0x0019BC, 0x0054B1, 0x006A5B, 0x008C03, 0x00AB00, 0x2C8800, 0xA47200, 0x000000, 0x000000, 0x000000, 0xF8F8F8, 0xFFAB3C, 0xFF7981, 0xFF5BC5, 0xFF48F2, 0xDF49FF, 0x476DFF, 0x00B4F7, 0x00E0FF, 0x00E375, 0x03F42B, 0x78B82E, 0xE5E218, 0x787878, 0x000000, 0x000000, 0xFFFFFF, 0xFFF2BE, 0xF8B8B8, 0xF8B8D8, 0xFFB6FF, 0xFFC3FF, 0xC7D1FF, 0x9ADAFF, 0x88EDF8, 0x83FFDD, 0xB8F8B8, 0xF5F8AC, 0xFFFFB0, 0xF8D8F8, 0x000000, 0x000000];
+    this.curTable = new Uint32Array([0x525252, 0xB40000, 0xA00000, 0xB1003D, 0x740069, 0x00005B, 0x00005F, 0x001840, 0x002F10, 0x084A08, 0x006700, 0x124200, 0x6D2800, 0x000000, 0x000000, 0x000000, 0xC4D5E7, 0xFF4000, 0xDC0E22, 0xFF476B, 0xD7009F, 0x680AD7, 0x0019BC, 0x0054B1, 0x006A5B, 0x008C03, 0x00AB00, 0x2C8800, 0xA47200, 0x000000, 0x000000, 0x000000, 0xF8F8F8, 0xFFAB3C, 0xFF7981, 0xFF5BC5, 0xFF48F2, 0xDF49FF, 0x476DFF, 0x00B4F7, 0x00E0FF, 0x00E375, 0x03F42B, 0x78B82E, 0xE5E218, 0x787878, 0x000000, 0x000000, 0xFFFFFF, 0xFFF2BE, 0xF8B8B8, 0xF8B8D8, 0xFFB6FF, 0xFFC3FF, 0xC7D1FF, 0x9ADAFF, 0x88EDF8, 0x83FFDD, 0xB8F8B8, 0xF5F8AC, 0xFFFFB0, 0xF8D8F8, 0x000000, 0x000000]);
     this.makeTables();
     this.setEmphasis(0);
   },
@@ -1637,7 +1637,7 @@ PaletteTable.prototype = {
         bFactor = 0.75;
       }
 
-      this.emphTable[emph] = new Array(64);
+      this.emphTable[emph] = new Uint32Array(64);
 
       // Calculate table:
       for (i = 0; i < 64; i++) {

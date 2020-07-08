@@ -1,6 +1,6 @@
 var Tile = function() {
   // Tile data:
-  this.pix = new Array(64);
+  this.pix = new Uint8Array(64);
 
   this.fbIndex = null;
   this.tIndex = null;

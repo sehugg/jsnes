@@ -688,8 +688,8 @@ PAPU.prototype = {
     var max_sqr = 0;
     var max_tnd = 0;
 
-    this.square_table = new Array(32 * 16);
-    this.tnd_table = new Array(204 * 16);
+    this.square_table = new Float32Array(32 * 16);
+    this.tnd_table = new Float32Array(204 * 16);
 
     for (i = 0; i < 32 * 16; i++) {
       value = 95.52 / (8128.0 / (i / 16.0) + 100.0);

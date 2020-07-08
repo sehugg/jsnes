@@ -40,7 +40,7 @@ CPU.prototype = {
 
   reset: function() {
     // Main memory
-    this.mem = new Array(0x10000);
+    this.mem = new Uint8Array(0x10000);
 
     for (var i = 0; i < 0x2000; i++) {
       this.mem[i] = 0xff;

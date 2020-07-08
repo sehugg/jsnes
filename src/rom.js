@@ -108,7 +108,7 @@ ROM.prototype = {
     this.rom = new Array(this.romCount);
     var offset = 16;
     for (i = 0; i < this.romCount; i++) {
-      this.rom[i] = new Array(16384);
+      this.rom[i] = new Uint8Array(16384);
       for (j = 0; j < 16384; j++) {
         if (offset + j >= data.length) {
           break;
@@ -120,7 +120,7 @@ ROM.prototype = {
     // Load CHR-ROM banks:
     this.vrom = new Array(this.vromCount);
     for (i = 0; i < this.vromCount; i++) {
-      this.vrom[i] = new Array(4096);
+      this.vrom[i] = new Uint8Array(4096);
       for (j = 0; j < 4096; j++) {
         if (offset + j >= data.length) {
           break;
