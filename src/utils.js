@@ -11,14 +11,19 @@ module.exports = {
 
   fromJSON: function(obj, state) {
     for (var i = 0; i < obj.JSON_PROPERTIES.length; i++) {
-      obj[obj.JSON_PROPERTIES[i]] = state[obj.JSON_PROPERTIES[i]];
+      var key = obj.JSON_PROPERTIES[i];
+      if (obj[key] !== null && obj[key].buffer && obj[key].set)
+        obj[key].set(state[key]); // set array elements
+      else
+        obj[key] = state[key]; // replace
     }
   },
 
   toJSON: function(obj) {
     var state = {};
     for (var i = 0; i < obj.JSON_PROPERTIES.length; i++) {
-      state[obj.JSON_PROPERTIES[i]] = obj[obj.JSON_PROPERTIES[i]];
+      var key = obj.JSON_PROPERTIES[i];
+      state[key] = obj[key];
     }
     return state;
   }
