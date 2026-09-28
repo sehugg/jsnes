@@ -23,8 +23,9 @@ class Mapper4 extends Mapper0 {
     this.prgAddressSelect = 0;
     this.chrAddressSelect = 0;
     this.pageNumber = 0;
-    this.irqCounter = 0;
-    this.irqLatchValue = 0;
+    this.irqCounter = 0xff;
+    this.irqLatchValue = 0xff;
+    this.irqReload = 0;
     this.irqEnable = 0;
     this.prgAddressChanged = false;
   }
@@ -70,19 +71,18 @@ class Mapper4 extends Mapper0 {
         break;
 
       case 0xc000:
-        // IRQ Counter register
-        this.irqCounter = value;
-        //nes.ppu.mapperIrqCounter = 0;
-        break;
-
-      case 0xc001:
         // IRQ Latch register
         this.irqLatchValue = value;
         break;
 
+      case 0xc001:
+        // IRQ Reload register: the counter reloads from the latch at the
+        // next clock
+        this.irqReload = 1;
+        break;
+
       case 0xe000:
-        // IRQ Control Reg 0 (disable)
-        //irqCounter = irqLatchValue;
+        // IRQ Control Reg 0 (disable, ack)
         this.irqEnable = 0;
         break;
 
@@ -216,14 +216,17 @@ class Mapper4 extends Mapper0 {
   }
 
   clockIrqCounter() {
-    if (this.irqEnable === 1) {
-      this.irqCounter--;
-      if (this.irqCounter < 0) {
-        // Trigger IRQ:
-        //nes.getCpu().doIrq();
+    if (this.irqReload === 1) {
+      this.irqCounter = this.irqLatchValue;
+      this.irqReload = 0;
+    }
+    // The counter runs whether or not IRQs are enabled
+    this.irqCounter--;
+    if (this.irqCounter < 0) {
+      if (this.irqEnable === 1) {
         this.nes.cpu.requestIrq(this.nes.cpu.IRQ_NORMAL);
-        this.irqCounter = this.irqLatchValue;
       }
+      this.irqCounter = this.irqLatchValue;
     }
   }
 
@@ -234,6 +237,7 @@ class Mapper4 extends Mapper0 {
     s.chrAddressSelect = this.chrAddressSelect;
     s.pageNumber = this.pageNumber;
     s.irqCounter = this.irqCounter;
+    s.irqReload = this.irqReload;
     s.irqLatchValue = this.irqLatchValue;
     s.irqEnable = this.irqEnable;
     s.prgAddressChanged = this.prgAddressChanged;
@@ -247,6 +251,7 @@ class Mapper4 extends Mapper0 {
     this.chrAddressSelect = s.chrAddressSelect;
     this.pageNumber = s.pageNumber;
     this.irqCounter = s.irqCounter;
+    this.irqReload = s.irqReload || 0;
     this.irqLatchValue = s.irqLatchValue;
     this.irqEnable = s.irqEnable;
     this.prgAddressChanged = s.prgAddressChanged;

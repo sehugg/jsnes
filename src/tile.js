@@ -151,8 +151,8 @@ class Tile {
 
   toJSON() {
     return {
-      opaque: Array.from(this.opaque),
-      pix: Array.from(this.pix),
+      opaque: this.opaque.slice(0),
+      pix: this.pix.slice(0),
     };
   }
 

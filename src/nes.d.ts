@@ -23,7 +23,7 @@ export class NES {
   constructor(opts: NESOptions);
   gameGenie: GameGenie;
   reset: () => void;
-  frame: () => void;
+  frame: (trap?: () => boolean) => boolean;
   buttonDown: (controller: ControllerId, button: ButtonKey) => void;
   buttonUp: (controller: ControllerId, button: ButtonKey) => void;
   zapperMove: (x: number, y: number) => void;

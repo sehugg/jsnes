@@ -177,6 +177,101 @@ describe("NES", function () {
     assert.strictEqual(restored.controllers[2].state[1], 0x41);
   });
 
+  describe("#frame() with a trap", function () {
+    it("stops before an instruction and finishes the frame on the next call", function () {
+      let data = fs.readFileSync("roms/croom/croom.nes");
+      let frames = 0;
+      let nes = new NES({ onFrame: () => frames++, emulateSound: false });
+      nes.loadROM(data.toString("binary"));
+      nes.frame();
+      assert.strictEqual(frames, 1);
+
+      let steps = 0;
+      assert.strictEqual(
+        nes.frame(() => ++steps > 100),
+        true,
+      );
+      assert.strictEqual(frames, 1);
+      assert.strictEqual(nes.frameInProgress, true);
+      assert.strictEqual(nes.frame(), false);
+      assert.strictEqual(frames, 2);
+      assert.strictEqual(nes.frameInProgress, false);
+    });
+
+    it("runs the same with and without a trap", function () {
+      let data = fs.readFileSync("roms/croom/croom.nes");
+      let a = new NES({ emulateSound: false });
+      let b = new NES({ emulateSound: false });
+      a.loadROM(data.toString("binary"));
+      b.loadROM(data.toString("binary"));
+      for (let i = 0; i < 10; i++) {
+        a.frame();
+        let n = 0;
+        while (b.frame(() => ++n % 500 === 0));
+      }
+      assert.deepStrictEqual(b.cpu.mem, a.cpu.mem);
+      assert.deepStrictEqual(b.ppu.buffer, a.ppu.buffer);
+    });
+  });
+
+  it("saves states that don't change as the emulator runs on", function () {
+    let data = fs.readFileSync("roms/croom/croom.nes");
+    let nes = new NES({ emulateSound: false });
+    nes.loadROM(data.toString("binary"));
+    for (let i = 0; i < 5; i++) nes.frame();
+    let state = nes.toJSON();
+    let saved = JSON.stringify(state, (k, v) =>
+      ArrayBuffer.isView(v) ? Array.from(v) : v,
+    );
+    for (let i = 0; i < 5; i++) nes.frame();
+    nes.controllers[1].buttonDown(0);
+    assert.strictEqual(
+      JSON.stringify(state, (k, v) =>
+        ArrayBuffer.isView(v) ? Array.from(v) : v,
+      ),
+      saved,
+    );
+
+    // loading copies the state in, so running on doesn't change it either
+    nes.fromJSON(state);
+    for (let i = 0; i < 5; i++) nes.frame();
+    nes.controllers[1].buttonDown(1);
+    assert.strictEqual(
+      JSON.stringify(state, (k, v) =>
+        ArrayBuffer.isView(v) ? Array.from(v) : v,
+      ),
+      saved,
+    );
+  });
+
+  it("restores a mid-frame state to run the same as the original", function () {
+    let data = fs.readFileSync("roms/croom/croom.nes");
+    let nes = new NES({ emulateSound: false });
+    nes.loadROM(data.toString("binary"));
+    for (let i = 0; i < 60; i++) nes.frame();
+    // stop where sprites have been evaluated for scanlines not yet drawn
+    let steps = 0;
+    nes.frame(() => ++steps > 9000);
+    let state = nes.toJSON();
+    nes.frame(); // finish the frame
+    let mem = nes.cpu.mem.slice(0);
+    let buffer = nes.ppu.buffer.slice(0);
+
+    // a plain-JSON copy of the state loads too
+    let restored = new NES({ emulateSound: false });
+    restored.loadROM(data.toString("binary"));
+    restored.fromJSON(
+      JSON.parse(
+        JSON.stringify(state, (k, v) =>
+          ArrayBuffer.isView(v) ? Array.from(v) : v,
+        ),
+      ),
+    );
+    restored.frame();
+    assert.deepStrictEqual(restored.cpu.mem, mem);
+    assert.deepStrictEqual(restored.ppu.buffer, buffer);
+  });
+
   describe("#getFPS()", function () {
     let nes = new NES();
     before(function () {

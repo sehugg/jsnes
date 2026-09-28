@@ -40,8 +40,8 @@ class NameTable {
 
   toJSON() {
     return {
-      tile: Array.from(this.tile),
-      attrib: Array.from(this.attrib),
+      tile: this.tile.slice(0),
+      attrib: this.attrib.slice(0),
     };
   }
 

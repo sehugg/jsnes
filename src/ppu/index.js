@@ -2146,6 +2146,15 @@ class PPU {
       state.ptTile[i] = this.ptTile[i].toJSON();
     }
 
+    // scantile caches tiles from ptTile, which a load replaces, so save
+    // their indexes
+    state.scantile = [];
+    for (i = 0; i < this.scantile.length; i++) {
+      state.scantile[i] = this.scantile[i]
+        ? this.ptTile.indexOf(this.scantile[i])
+        : -1;
+    }
+
     return state;
   }
 
@@ -2160,6 +2169,14 @@ class PPU {
 
     for (i = 0; i < this.ptTile.length; i++) {
       this.ptTile[i].fromJSON(state.ptTile[i]);
+    }
+
+    this.scantile = new Array(32);
+    if (state.scantile) {
+      for (i = 0; i < state.scantile.length; i++) {
+        const t = state.scantile[i];
+        if (typeof t === "number" && t >= 0) this.scantile[i] = this.ptTile[t];
+      }
     }
 
     // Sprite data:
@@ -2219,6 +2236,11 @@ class PPU {
     "secondaryOAM",
     "spritesFound",
     "sprite0InSecondary",
+    // Per-scanline sprite evaluation results. startFrame() clears them, but
+    // a state saved mid-frame needs the ones already evaluated.
+    "scanlineSpriteCount",
+    "scanlineSecondaryOAM",
+    "scanlineSprite0",
     // Palettes
     "sprPalette",
     "imgPalette",
@@ -2227,7 +2249,6 @@ class PPU {
     "scanline",
     "lastRenderedScanline",
     "curNt",
-    "scantile",
     // Used during rendering
     "attrib",
     "buffer",

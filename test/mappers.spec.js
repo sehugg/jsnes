@@ -186,6 +186,41 @@ describe("MMC3 (Mapper 4)", function () {
     mapper.write(0xbffe, 0x00); // should decode as $A000
     assert.strictEqual(mirroring, mockNes.rom.VERTICAL_MIRRORING);
   });
+
+  it("reloads the IRQ counter from the latch ($C000) after $C001", function () {
+    let irqs = 0;
+    mockNes.cpu.requestIrq = function () {
+      irqs++;
+    };
+    mapper.write(0xc000, 2); // latch
+    mapper.write(0xc001, 0); // reload at next clock
+    mapper.write(0xe001, 0); // enable
+    mapper.clockIrqCounter();
+    mapper.clockIrqCounter();
+    assert.strictEqual(irqs, 0);
+    mapper.clockIrqCounter();
+    assert.strictEqual(irqs, 1);
+    // reloads from the latch, so fires again 3 clocks later
+    mapper.clockIrqCounter();
+    mapper.clockIrqCounter();
+    assert.strictEqual(irqs, 1);
+    mapper.clockIrqCounter();
+    assert.strictEqual(irqs, 2);
+  });
+
+  it("clocks the IRQ counter while IRQs are disabled", function () {
+    let irqs = 0;
+    mockNes.cpu.requestIrq = function () {
+      irqs++;
+    };
+    mapper.write(0xc000, 5);
+    mapper.write(0xc001, 0);
+    mapper.write(0xe000, 0); // disable
+    mapper.clockIrqCounter();
+    mapper.clockIrqCounter();
+    assert.strictEqual(mapper.irqCounter, 3);
+    assert.strictEqual(irqs, 0);
+  });
 });
 
 // --- MMC5 (Mapper 5) Tests ---

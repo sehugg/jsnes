@@ -54,20 +54,28 @@ class NES {
     this.fpsFrameCount = 0;
 
     this.crashed = false;
+    this.frameInProgress = false;
   }
 
   // The frame loop. PPU is advanced inline after every CPU bus operation
   // (in cpu.load/write/push/pull). APU is clocked in bulk after each
   // instruction for compatibility with its sample timing logic.
-  frame = () => {
+  //
+  // If `trap` is given, it is called before each CPU instruction; when it
+  // returns true, frame() stops there and returns true. The next call to
+  // frame() finishes that frame.
+  frame = (trap) => {
     if (this.crashed) {
       throw new Error(
         "Game has crashed. Call reset() or loadROM() to restart.",
       );
     }
-    this.controllers[1].clock();
-    this.controllers[2].clock();
-    this.ppu.startFrame();
+    if (!this.frameInProgress) {
+      this.controllers[1].clock();
+      this.controllers[2].clock();
+      this.ppu.startFrame();
+      this.frameInProgress = true;
+    }
     let cycles;
     const cpu = this.cpu;
     const ppu = this.ppu;
@@ -75,6 +83,7 @@ class NES {
     try {
       for (;;) {
         if (cpu.cyclesToHalt === 0) {
+          if (trap && trap()) return true;
           // Execute a CPU instruction. PPU advancement happens inline
           // inside the bus operations (load/write/push/pull).
           cycles = cpu.emulate();
@@ -109,7 +118,9 @@ class NES {
       this.crashed = true;
       throw e;
     }
+    this.frameInProgress = false;
     this.fpsFrameCount++;
+    return false;
   };
 
   buttonDown = (controller, button) => {
@@ -182,6 +193,7 @@ class NES {
       mmap: this.mmap.toJSON(),
       ppu: this.ppu.toJSON(),
       papu: this.papu.toJSON(),
+      frameInProgress: this.frameInProgress,
       controllers: {
         1: this.controllers[1].toJSON(),
         2: this.controllers[2].toJSON(),
@@ -196,6 +208,7 @@ class NES {
     this.mmap.fromJSON(s.mmap);
     this.ppu.fromJSON(s.ppu);
     this.papu.fromJSON(s.papu);
+    this.frameInProgress = !!s.frameInProgress;
     if (s.controllers) {
       if (s.controllers[1]) this.controllers[1].fromJSON(s.controllers[1]);
       if (s.controllers[2]) this.controllers[2].fromJSON(s.controllers[2]);
